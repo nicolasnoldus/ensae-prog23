@@ -398,7 +398,7 @@ def min_power_kruskal_V1(input_graph, src, dest):
 
 
 
-def min_power_kruskal_V2(input_graph, src, dest, power):
+def min_power_kruskal_LCA(input_graph, src, dest, power):
     """
     New version of the min_power function, 
     Gives the path with the minimum power between two given nodes
@@ -411,16 +411,7 @@ def min_power_kruskal_V2(input_graph, src, dest, power):
     MST = kruskal(input_graph)
     # Step n°2: Lowest common ancestor
    
-
 def knapsack(truck_cost, profit, Budget, B, n):
-    """
-    (Optimized) recursive knapsack method applied to our truck allocation problem
-    Computes all profits associated to all sets of allocations and gives the global maximum
-    For each traject we use our optimal min_power with LCA computed earlier on to find the optimal truck
-    We use dynamic programming to make this algorithm useable
-    Complexity = O(|Number of paths * Budget|)
-    Auxiliary space = O(|Budget|)
-    """
     path = list_of_paths[n]
     # the budget will be saturated at some point
     if Budget - truck_cost < 0:
@@ -428,14 +419,9 @@ def knapsack(truck_cost, profit, Budget, B, n):
         # M[n][Budget] = M[n-1][Budget]
         return 
     
- """
-    # If weight of the nth item is
-    # more than Knapsack of capacity W,
-    # then this item cannot be included
-    # in the optimal solution
     if (wt[n-1] > W):
         return knapSack(W, wt, val, n-1)
- """
+ 
     #Actualize Budget!
 
     # return the maximum of two cases:
@@ -443,16 +429,47 @@ def knapsack(truck_cost, profit, Budget, B, n):
     # (2) not included
     else:
         Budget -= truck_cost
-        M[n][Budget] = max(profit[n-1] + knapSack(Budget, truck_cost, profit, n-1), knapSack(Budget, truck_cost, profit, n-1))
+        M[n][Budget] = max(profit[n-1] + knapsack(Budget, truck_cost, profit, n-1), knapSack(Budget, truck_cost, profit, n-1))
         #  M[n][Budget] = max(profit[n-1] + M[n-1][Budget-truck_cost[n-1]], M[n-1][budget])
         return M[n][Budget]
 
 # A lot of optimization to do (space optimization specifically: there is no need for a matrix, could be done with a vector if properly done)
 # + lists/attributes : maybe create new class to initialize ot modify graph
 
+def knapsack(truck_cost, profit, Budget, N):
+    """
+    (Optimized) recursive knapsack method applied to our truck allocation problem
+    Computes all profits associated to all sets of allocations and gives the global maximum
+    For each traject we use our optimal min_power with LCA computed earlier on to find the optimal truck
+    We use dynamic programming to make this algorithm useable
+    Complexity = O(|Number of paths * Budget|)
+    Auxiliary space = O(|Budget|)
+    Later on we will use a greedy version
+
+    Args:
+        truck_cost (_type_): _description_
+        profit (_type_): _description_
+        Budget (_type_): _description_
+        B (_type_): _description_
+        N (_type_): _description_
+
+    Rem: this should suffice to actualize budget
+    Problem: intializing truck_cost
+    """
+
+#First version
+    if N==0 or Budget==0:
+        return 0
+    #if the truck is too expensive, we cannot include it
+    if (truck_cost[N-1] > Budget):
+        return knapsack(truck_cost, profit, Budget, B, N-1)
+    #now we compare the profit between including the nth truck or not
+    else:
+        return max(profit(N-1)+ knapsack(truck_cost, profit, Budget-truck_cost(N-1), B, N-1), knapsack(truck_cost, profit, Budget-truck_cost(N-1), B, N-1))
 
 
-def knapsack_trucks(graph, routes, trucks)   
+
+def knapsack_trucks(graph, routes, trucks):   
     # reading our file and initializing gain, cost, paths, etc. 
     g = graph_from_file(filename)
     Budget = 25*10**9
@@ -463,7 +480,7 @@ def knapsack_trucks(graph, routes, trucks)
         gain = path.gain
         min_power = g.min_power(path)
     while B <= Budget:
-
+        """
     for i, line in enumerate(trucks):
         if i == 0:
             continue  # Skip the first line
@@ -471,7 +488,7 @@ def knapsack_trucks(graph, routes, trucks)
     # intializing M, or not to get into DP*
 
     # running knapsack on our file
-
+"""
 
 
     """
@@ -484,22 +501,30 @@ def knapsack_trucks(graph, routes, trucks)
 
     
 
-    def greedy_approach():
+    def greedy_approach(input_graph, routesfile, ):
         """
     Idea: start by sorting the paths by profit and then go one by one
     This relies heavily on our min_power_LCA earlier on
-    Limits in comparison with a global max ?
-    Is the min_power a guarantee of max profit? Intuitively it is... 
+    ***
+    Limits in comparison with a global max : 
+    Possibly the last truck + the leftover budget would have been better spent 
+    by saturating the budget completely on less expensive trucks
+    *** 
+    Improvement ideas: 
+    1° change the notion of profit
+    2° find a way to make agree with global max
     Complexity = log(N) ?
         """
+       
         paths_and_trucks = []
-        Budget = 
-        # Step n° 1 create a dict with path, min_power, truck, profit
+        Budget = 25*10**9
+        #read the file
+        # Step n° 1: create a dict with path, min_power, truck, profit
         X = {}
-        for path in routes:
-            min_power_LCA(path)
-            truck(path) = truck with truck_power >= min_power
+        for n1, n2 in routes:
+            truck with truck_power >= min_power_LCA(input_graph, n1, n2, power)
             cost(path) = cost(truck(path))
+        # Rem: Our notion of profit is "economical": gains - expenditures
             profit = gain(path) - cost(path)
             X.append([path, min_power, truck, profit]) #find a better way than append to reduce time? new class? 
         # Step n° 2: sort by profit (descending)
@@ -507,4 +532,9 @@ def knapsack_trucks(graph, routes, trucks)
         # Step n° 3: saturate budget
         while Budget > 0:
             for i in range(len(g.profit)):
-                paths_and_trucks.append
+                while Budget - cost > 0
+                paths_and_trucks.append()
+                Budget = Budget - cost()
+        # We now have a list of trucks and associated paths, sorted by profit
+        return paths_and_trucks
+
