@@ -316,11 +316,10 @@ class Union_Find():
 
     def __init__(self):
         self.subtree_size = -1
-        self.parent = -1
+        self.parent = self
 
     def set_up(self):
         self.subtree_size = 0
-        self.parent = 0
     
 # A find function to get to the set a node belongs to
     def find(self):
@@ -337,9 +336,11 @@ class Union_Find():
         if x == y :
             return 
         if x.subtree_size > y.subtree_size:
-            y.subtree_size = x
+            y.parent = x
+            x.subtree_size += y.subtree_size
         else:
-            x.subtree_size = y
+            x.parent = y
+            y.subtree_size += x.subtree_size
             if x.subtree_size == y.subtree_size:
                 y.subtree_size += 1
 
@@ -354,10 +355,6 @@ def kruskal(input_graph):
     """
     MST = Graph()
     MST.nb_edges = input_graph.nb_nodes - 1
-    """
-    Preuve (Q.11): Un graphe connexe non orienté est un arbre ssi il a |sommets|-1 arêtes
-
-    """
     # Sorting edges in a nondecreasing order of their power: 
     # the spanning tree produced by iteration will then necessarily be a MST
     input_graph.graph = sorted(input_graph.list_of_edges, key=lambda item: item[2])
@@ -369,7 +366,7 @@ def kruskal(input_graph):
         nodes[node].set_up()
     # When our MST in progress will have |V|-1 edges, it will be complete (see above, Q. 11)
     e = 0
-    while e < len(input_graph.nodes)-1:
+    while e < len(input_graph.nodes)-1 and p < len(input_graph.graph):
         # we consider the edge with the smallest power each time
         n1, n2, power = input_graph.graph[p]
         p = p+1
@@ -380,6 +377,7 @@ def kruskal(input_graph):
             # and we take into account that the nodes are now connected
             nodes[n1].union(nodes[n2])
     return MST
+
 
 
 def min_power_kruskal_V1(input_graph, src, dest):
