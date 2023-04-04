@@ -31,7 +31,6 @@ class Graph:
         self.list_of_neighbours = []
         self.list_of_edges = []
         self.max_power = 0
-    
 
     def __str__(self):
         """Prints the graph as a list of neighbors for each node (one per line)"""
@@ -46,7 +45,6 @@ class Graph:
     def add_edge(self, node1, node2, power_min, dist=1):
         """
         Adds an edge to the graph. Graphs are not oriented, hence an edge is added to the adjacency list of both end nodes. 
-
         Parameters: 
         -----------
         node1: NodeType
@@ -73,49 +71,27 @@ class Graph:
         self.list_of_edges.append((node1,node2,power_min))
     
 
-
     def get_path_with_power(self, src, dest, power):
-
         ancetres = self.bfs(src, dest, power) #ancetres est encore le dicitonnaire qui a comme clé un noeud et comme valeur 
-
         #celui par lequel on a pu parvenir à ce noeud.
-
         parcours = []
-
         #on crée une liste parcours qui nous donnera le parcours entre les deux noeuds choisis en respectant toujours la puissance 
-
         #exigée.
-
         a = dest #on renomme dest en a pour faciliter la suite.
-
         if a not in ancetres:
-
             return None
-
             #s'il n'y a pas de graphe connexe avec la puissance exigée, on retourne none.
-
         while a != src:
-
             #On met cette condition car on part de l'arrivée de notre bfs, donc on remonte point par point jusqu'à arriver à 
-
             #notre point de départ.
-
             parcours.append(a)
-
             a = ancetres[a]
-
             #on rajoute le sommet a à notre liste de noeuds parcourus et on définit "le nouveau" a comme étant son ancêtre pour
-
             #rebrousser chemin.
-
         parcours.append(src)
-
         #on doit ajouter l'origine a la main parce que notre boucle while s'arrête dès lors que a prend la valeur du noeud de départ
-
         #et ne le rajoute donc pas dans la liste.
-
         parcours.reverse()
-
         return parcours
 
 
@@ -135,7 +111,6 @@ class Graph:
                 #encore présent dans la liste "visites". On rajoute également une condition sur la puissance lorsque cela est nécessaire. 
         return visites
                 
-#et on applique à nouveau la fonction pour qu elle visite tous les voisins des voisins etc...   
 
     def connected_components(self) :
         visites = []
@@ -152,7 +127,12 @@ class Graph:
                 self.dfs(i, visites, composantes)
                 gde_liste.append(composantes)
         return gde_liste
-        
+
+              
+    def connected_components_set(self):
+        return set(map(frozenset, self.connected_components()))
+
+
     def bfs(self, beg, dest, power=-1):
         ancetres = {}
         #le dictionnaire ancetres est le dicitonnaire qui permet d'avoir le lien entre chaque sommet, c'est-à-dire que la clé est le 
@@ -180,113 +160,39 @@ class Graph:
         return ancetres
 
 
-    def BS(self, liste, power):
-        #code de BS "de base" utilisé pour avoir une idée de comment coder le binary search de min_power
-        haut = len(liste)-1
-        bas = 0
-        mid = 0
-        while bas <= haut:
-            mid = (haut+bas)//2
-            if liste[mid] < power:
-                bas = mid+1
-            elif liste[mid] > power:
-                haut = mid-1
-            elif liste[mid] == power:
-                return mid
-        return -1 #si on arrive la c est que l element etait po dans la liste
-
-    def power_nodes(self, node1, node2): #fonction un peu inutile utilisée à des fins d'entraînement
-        liste = self.graph[node1]
-        for i in liste:
-            if i[1] == node2:
-                power = i[3]
-        return power
-    
-     def min_power(self, src, dest):
-
-        debut = 1
-
-        fin = self.max_power
-
-        actu=self.get_path_with_power(src, dest, self.max_power)
-
-        if actu is None or dest not in actu:
-
-            return None, None
-
-        #si les deux noeuds en question ne sont pas sur un graphe connexe, on retourne none car il n'y a pas de chemins possible. 
-
-        while debut != fin: 
-
-            #on fait une recherche binaire. 
-
-            #Pour être tout à fait honnête, la condition sur le while est un peu désuète étant donné qu'on fait un break
-
-            #avant que cette condition puisse se remplir mais c'est la solution qui a le mieux marché sur plusieurs tests : 
-
-            #network.1 et network.2, lentement mais sûrement.
-
-            mid = ((debut+fin)//2)
-
-            actu=self.get_path_with_power(src, dest, power=mid)
-
-            #on actualise à chaque itération le graphe des sommets formant un graphe connexe et permettant un chemin. 
-
-            if actu is not None and dest in actu:
-
-                fin = mid
-
-            #si le sommet qu'on veut atteindre est dans le graphe fait à partir de la médiane des puissances
-
-            #on redéfinit la "borne sup" comme étant l'ancien milieu pour retrécir notre champ de recherche.
-
+    def min_power(self, src, dest):
+        path=[]
+        start = 0
+        end = self.max_power
+        if dest not in self.dfs(src):
+            return None
+        while start != end:
+            mid = (start+end)//2
+            if dest not in self.dfs(src, power=mid):
+                start = mid
             else:
+                end = mid
+            if end-start == 1:
+                start=end
+        #We now have identified the minimum power to link the two nodes, stored in power
+        #We have to get the path
+        power = end
+        path = self.get_list_of_paths_with_power(origin,destination,power=power)[0]
+        return (power,path)
 
-                debut=mid
-
-            #on procède pareillement mais avec la plus petite puissance dans le cas contraire.
-
-            if fin-debut == 1 :
-
-                break
-
-            #Comme on ne prend pas comme valeurs de power les puissances présentes dans le graphe mais simplement 
-
-            #les entiers situés entre la plus grande puissance et la plus petite, 
-
-            #la condition pour sortir de la boucle while est que la différence entre les deux extrêmes soit égale à un. 
-
-            #Ainsi, cela signifierait que ce sont deux entiers qui se suivent et on doit donc nécessairement prendre 
-
-            #"fin" car début serait trop petit. 
-
-        minus=fin
-
-        return self.get_path_with_power(src, dest, minus), minus
-
-        #en testant cette fonction sur le network.2 avec comme noeuds 1 et 12, voici le résultat obtenu :
-
-        # ([1, 2, 4, 12], 52761). C'est assez long mais il parvient au résultat sans trop de soucis.  
-
-    def connected_components_set(self):
-        return set(map(frozenset, self.connected_components()))
-    
 
 def graph_from_file(filename):
     """
     Reads a text file and returns the graph as an object of the Graph class.
-
     The file should have the following format: 
         The first line of the file is 'n m'
         The next m lines have 'node1 node2 power_min dist' or 'node1 node2 power_min' (if dist is missing, it will be set to 1 by default)
         The nodes (node1, node2) should be named 1..n
         All values are integers.
-
     Parameters: 
     -----------
     filename: str
         The name of the file
-
     Outputs: 
     -----------
     g: Graph
@@ -329,7 +235,7 @@ class Union_Find():
 
 # A function that merges two sets of x and y,
 # in this case the sets being connected components of nodes    
-# we filter by subtree size for efficience
+# we filter by subtree size for efficiency
     def union(self, node_2):
         x = self.find()
         y = node_2.find()    
@@ -378,6 +284,7 @@ def kruskal(input_graph):
             nodes[n1].union(nodes[n2])
     return MST
 
+
 def min_power_kruskal(input_graph, src, dest):
     """
     New version of the min_power function, 
@@ -389,23 +296,104 @@ def min_power_kruskal(input_graph, src, dest):
     # Step n° 1: Preprocessing
     MST = kruskal(input_graph)
     #Step n° 2: running the usual min_power on the generated MST
-    path, power = min_power(MST, src, dest)
+    path, power = MST.min_power(src, dest)
     return path, power
 
 
-def min_power_kruskal_LCA(input_graph, src, dest, power):
+def LCA(src, dest, ancetres) :
+    route_src=[]
+    route_dest=[]
+    a=src
+    b=dest
+    if a not in ancetres or b not in ancetres :
+        return None
+    else :
+        while a!=b :
+            route_src.append(a)
+            route_dest.append(b)
+            a=ancetres[a]
+            b=ancetres[b]
+            route_src.reverse()
+            trajet_total = route_src + route_dest
+        return trajet_total
+
+
+def get_lca(src, dest, ancestors):
+    # Build a list of all ancestors of the start node
+    curr = src
+    parents = [0] * (len(ancestors)+1)
+    while curr in ancestors:
+        parents[curr] = ancestors[curr]
+        curr = ancestors[curr]
+    parents[src] = src
+    
+    # Find the lowest common ancestor of the two nodes
+    curr = dest
+    while curr != src:
+        if parents[curr] == 0:
+            return None
+        curr = parents[curr]
+    return curr
+
+
+def min_power_LCA(input_graph, src, dest, power):
     """
     New version of the min_power function, 
     Gives the path with the minimum power between two given nodes
     Two twists bring complexity down and time performance up:
     - preprocessing with the kruskal algorithm
     - lowest common ancestor (LCA) search instead of DFS to find paths before power-sorting them
-    This shoumd allow to bring complexity down to O(|log(V)|)
+    This should allow to bring complexity down to O(|log(V)|)
     """
     # Step n° 1: Preprocessing
     MST = kruskal(input_graph)
-    # Step n°2: Lowest common ancestor
-  def knapsacked_trucks(filename):
+    # Step n° 2: Lowest common ancestor
+    list_of_neighbours = [[] for _ in range(len(MST))]
+    for node1, node2, weight in MST:
+        list_of_neighbours[node1-1].append((node2, weight))
+        list_of_neighbours[node2-1].append((node1, weight))
+    ancestors = {src}
+    current_node = src
+    parent_nodes = {src: src}
+    nodes_to_visit = [src]
+    while nodes_to_visit:
+        current_node = nodes_to_visit.pop()
+        for neighbor, weight in list_of_neighbours[current_node-1]:
+            if neighbor not in ancestors:
+                parent_nodes[neighbor] = current_node
+                ancestors.add(neighbor)
+                nodes_to_visit.append(neighbor)
+    
+    lca = get_lca(src, dest, parent_nodes)
+    if lca is None:
+        return None, float('inf')
+    
+    # Step n° 3: Finding the minimum power path
+    ascending_path = []
+    curr = src
+    while curr != lca:
+        ascending_path.append(curr)
+        for neighbor, weight in list_of_neighbours[curr-1]:
+            if neighbor == parent_nodes[curr]:
+                power = min(power, weight)
+        curr = parent_nodes[curr]
+    ascending_path.append(lca)
+
+    descending_path = []
+    curr = dest
+    while curr != lca:
+        descending_path.append(curr)
+        for neighbor, weight in list_of_neighbours[curr-1]:
+            if neighbor == parent_nodes[curr]:
+                power = min(power, weight)
+        curr = parent_nodes[curr]
+    descending_path.reverse()
+
+    path = ascending_path + descending_path
+    return path, power
+
+
+def knapsacked_trucks(filename):
     """
     A main function with embedded driver code and initialisation
     to run the recursive knapsack function below on our graph file
@@ -451,12 +439,12 @@ def min_power_kruskal_LCA(input_graph, src, dest, power):
         trucks_and_paths.append((truck, path))
     return trucks_and_paths, total_profit
 
+
 def knapsack(g, paths_cost_profit, Budget, N):
     """
     (Optimized) recursive knapsack method applied to our truck allocation problem
     Computes all profits associated to all sets of allocations and gives the global maximum
     We use dynamic programming (DP) as a main resource to reduce complexity:
-
     Complexity = O(|Number of paths * Budget|)
     Auxiliary space = O(|Budget|)
     Args:
@@ -497,6 +485,7 @@ def knapsack(g, paths_cost_profit, Budget, N):
     return trucks_and_paths, DP[Budget]
 
 
+
 def greedy_approach(input_graph, routesfile, ):
         """
     Idea: start by sorting the paths by profit and then go one by one
@@ -526,3 +515,48 @@ def greedy_approach(input_graph, routesfile, ):
                 Budget = Budget - cost()
         # We now have a list of trucks and associated paths, sorted by profit
         return paths_and_trucks    
+
+
+
+def expected_profit(graph, paths_and_trucks):
+    """
+    Same allocation problem with two extra difficulties:
+    1° probability for a path to "break"
+    2° fuel cost 
+    This first approach considers the paths produced by our algorithms higher up and only computes the expected value under 1° and 2°
+    Problem: the actual maximisation doesn't consider 1° and 2°, and this first draft does not reconsider the paths choices
+    """
+    # 0. Initialising the given values, epsilon, fuel cost
+    eps = 0.001
+    fuel_cost = 0.001
+    expected_profit = 0
+    # 1. determine for paths in the earlier optimum the associated number of edges, distances, min_power, and truck to cover it
+    for n1, n2 in  :
+        amount, truck_cost = 
+        distance = 
+        number_of_edges = 
+    # 2. compute the expected profit of one traject
+        expected_val = amount*(1-eps)**number_of_edges - fuel_cost*distance - truck_cost
+    # 3. the total expected profit will be the sum for all paths in our optimum
+        expected_profit += expected_val
+    return expected_profit
+
+
+def simulated_annealing():
+    """
+    A simulated annealing application to our allocation problem with breaking probability
+    """
+
+
+
+
+
+
+
+
+
+
+
+
+
+
