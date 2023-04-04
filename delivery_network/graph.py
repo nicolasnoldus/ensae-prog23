@@ -300,43 +300,44 @@ def min_power_kruskal(input_graph, src, dest):
     return path, power
 
 
-def LCA(src, dest, ancetres) :
-    route_src=[]
-    route_dest=[]
-    a=src
-    b=dest
-    if a not in ancetres or b not in ancetres :
+def LCA(src, dest, ancetres):
+    """
+    Find the lowest common ancestor (LCA) of two nodes in a graph, and returns the path that goes through it 
+    (None if not in the graph)
+    Args:
+        src (int): The ID of the first node.
+        dest (int): The ID of the second node.
+        ancetres (dict): A dictionary that maps the ID of each node to the ID of its parent node.
+    """
+    if src not in ancetres or dest not in ancetres:
         return None
-    else :
-        while a!=b :
-            route_src.append(a)
-            route_dest.append(b)
-            a=ancetres[a]
-            b=ancetres[b]
-            route_src.reverse()
-            trajet_total = route_src + route_dest
-        return trajet_total
-
-
-def get_lca(src, dest, ancestors):
-    # Build a list of all ancestors of the start node
-    curr = src
-    parents = [0] * (len(ancestors)+1)
-    while curr in ancestors:
-        parents[curr] = ancestors[curr]
-        curr = ancestors[curr]
-    parents[src] = src
     
-    # Find the lowest common ancestor of the two nodes
-    curr = dest
-    while curr != src:
-        if parents[curr] == 0:
-            return None
-        curr = parents[curr]
-    return curr
+    route_src = [src]
+    route_dest = [dest]
+    visited_src = set(route_src)
+    visited_dest = set(route_dest)
 
+    while True:
+        if ancetres.get(src) is not None and ancetres[src] not in visited_src:
+            route_src.append(ancetres[src])
+            visited_src.add(ancetres[src])
+            src = ancetres[src]
+        else:
+            break
+            
+    while True:
+        if ancetres.get(dest) is not None and ancetres[dest] not in visited_dest:
+            route_dest.append(ancetres[dest])
+            visited_dest.add(ancetres[dest])
+            dest = ancetres[dest]
+        else:
+            break
+            
+    route_dest.reverse()
+    path = route_src + route_dest[1:]
+    return path
 
-def min_power_LCA(input_graph, src, dest, power):
+def min_power_LCA(graph, src, dest):
     """
     New version of the min_power function, 
     Gives the path with the minimum power between two given nodes
@@ -345,51 +346,12 @@ def min_power_LCA(input_graph, src, dest, power):
     - lowest common ancestor (LCA) search instead of DFS to find paths before power-sorting them
     This should allow to bring complexity down to O(|log(V)|)
     """
-    # Step n° 1: Preprocessing
-    MST = kruskal(input_graph)
-    # Step n° 2: Lowest common ancestor
-    list_of_neighbours = [[] for _ in range(len(MST))]
-    for node1, node2, weight in MST:
-        list_of_neighbours[node1-1].append((node2, weight))
-        list_of_neighbours[node2-1].append((node1, weight))
-    ancestors = {src}
-    current_node = src
-    parent_nodes = {src: src}
-    nodes_to_visit = [src]
-    while nodes_to_visit:
-        current_node = nodes_to_visit.pop()
-        for neighbor, weight in list_of_neighbours[current_node-1]:
-            if neighbor not in ancestors:
-                parent_nodes[neighbor] = current_node
-                ancestors.add(neighbor)
-                nodes_to_visit.append(neighbor)
-    
-    lca = get_lca(src, dest, parent_nodes)
-    if lca is None:
-        return None, float('inf')
-    
-    # Step n° 3: Finding the minimum power path
-    ascending_path = []
-    curr = src
-    while curr != lca:
-        ascending_path.append(curr)
-        for neighbor, weight in list_of_neighbours[curr-1]:
-            if neighbor == parent_nodes[curr]:
-                power = min(power, weight)
-        curr = parent_nodes[curr]
-    ascending_path.append(lca)
+    # 1. Preprocessing
+    g = kruskal(graph)
+    # 2. LCA
 
-    descending_path = []
-    curr = dest
-    while curr != lca:
-        descending_path.append(curr)
-        for neighbor, weight in list_of_neighbours[curr-1]:
-            if neighbor == parent_nodes[curr]:
-                power = min(power, weight)
-        curr = parent_nodes[curr]
-    descending_path.reverse()
+    # 3. power-sorting
 
-    path = ascending_path + descending_path
     return path, power
 
 
@@ -485,7 +447,6 @@ def knapsack(g, paths_cost_profit, Budget, N):
     return trucks_and_paths, DP[Budget]
 
 
-
 def greedy_approach(input_graph, routesfile, ):
         """
     Idea: start by sorting the paths by profit and then go one by one
@@ -494,6 +455,7 @@ def greedy_approach(input_graph, routesfile, ):
     Limits in comparison with a global max : 
     Possibly the last truck + the leftover budget would have been better spent 
     by saturating the budget completely on less expensive trucks
+    See below trials to fix this with a simulated-annealing inspired approach
     *** 
         """
         paths_and_trucks = []
@@ -542,10 +504,81 @@ def expected_profit(graph, paths_and_trucks):
     return expected_profit
 
 
-def simulated_annealing():
+def swaps(graph, allocation, alpha=0.99, stopping_T=1e-8, stopping_iter=100):
     """
-    A simulated annealing application to our allocation problem with breaking probability
+    A simulated annealing application combined with local search for our allocation problem with breaking probability
+    Instead of computing all possible paths, etc., we change one and see whether the expected profit is increased
+    This algorithm can get stuck in a local optimum: to check this we can change our initial starting point 
+    (our starting point is set by default on our previous optimal allocation with a knapsack/greedy approach,
+    because intuitively it might be close to our global optimum on expected value, 
+    but we could build a function to give random allocations to compare the different outputs of this function)
+    The approach here is to start with our min_power to maximize the profit, and then use simulated annealing for
+    1° maximizing with given breaking probability
+    2° maximizing our earlier greedy approach, compensating its local bias
     """
+    p_break = 0.001
+
+    
+    # we try to swap each path (always considering only those with minimal power, i.e. one path between two nodes)
+    # NB: MAIN PROBLEM: one path could be swapped for several! Idea: add real simulated annealing and reallocate budget
+    for leftover_path in leftover_budget:
+    # for a limited amount of iterations and "temperature" (reset for each path)
+        T = 1.0
+        i = 0
+        while T > stopping_T and i < stopping_iter:
+            for path in allocation:
+                new_allocation = start_allocation - path + leftover_path
+                if expected_profit(new_allocation)>expected_profit(allocation):
+                    allocation = new_allocation
+    return allocation
+                
+
+        
+def simulated_annealing(graph, allocation, alpha=0.99, stopping_T=1e-8, stopping_iter=100):
+    """
+    In this second approach, instead of starting with our constraint of minimized truck cost using min_power,
+    we use a more usual simulated annealing in the sense that swaps are random: we consider the same source and destination nodes than in our initial allocation,
+    but swap randomly the path that leads from source to destination
+    This allows for a comparison: do we get the same results for optimizing with a constraint of minimal truck cost
+    and for letting truck cost flucuate and thus minimizing more the importance of "breaks" in the expected value?
+    """
+    p_break = 
+    fuel_cost = 
+    # initialize solution
+    curr_allocation = allocation
+    curr_profit = get_allocation_profit(graph, curr_allocation, p_break, fuel_cost)
+    best_allocation = curr_allocation
+    best_profit = curr_profit
+    
+    # iterate until stopping condition
+    i = 0
+    while T > stopping_T and i < stopping_iter:
+        # randomly perturb solution
+        truck = random.choice(range(len(allocation)))
+        new_path = min_power_LCA(graph, curr_allocation[truck][0], curr_allocation[truck][1])
+        new_allocation = curr_allocation.copy()
+        new_allocation[truck] = new_path
+        
+        # accept perturbation if it improves solution or with certain probability if it worsens solution
+        new_profit = get_allocation_profit(graph, new_allocation, p_break, fuel_cost)
+        delta = new_profit - curr_profit
+        if delta > 0 or math.exp(delta/T) > random.random():
+            curr_allocation = new_allocation
+            curr_profit = new_profit
+        if curr_profit > best_profit:
+            best_allocation = curr_allocation
+            best_profit = curr_profit
+        
+        # decrease temperature
+        T *= alpha
+        i += 1
+        
+    return best_allocation, best_profit
+
+
+
+
+
 
 
 
