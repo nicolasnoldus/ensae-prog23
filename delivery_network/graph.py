@@ -146,7 +146,7 @@ class Graph:
        #qu'une fois chaque noeud.
        queue.append(beg)
        while len(queue) > 0:
-           n = queue.pop()
+           n = int(queue.pop())
            #le while est conditionné par la longueur de la queue du fait de l'utilisation de pop. Comme on a une queue on supprime le
            #dernier élément de cette liste pour chercher les autres sommets.
           
@@ -285,37 +285,38 @@ class Union_Find():
 
 
 def kruskal(input_graph):
-    """
-    Gives the minimum spanning tree (MST) of an input graph using Kruskal's algorithm
-    We use the union-find method to detect cycles as suggested in S. Dasgupta et al. (2006)
-    Path compression allows to bring complexity down to O(|V|): 
-    See below time-complexity comparisons with BFS/DFS
-    (This algorithm works adequately on one graph at a time)
-    """
-    MST = Graph()
-    MST.nb_edges = input_graph.nb_nodes - 1
-    # Sorting edges in a nondecreasing order of their power: 
-    # the spanning tree produced by iteration will then necessarily be a MST
-    input_graph.graph = sorted(input_graph.list_of_edges, key=lambda item: item[2])
-    # we use an index (p) to go through these edges in an increasing order of power
-    p = 0
-    nodes = {}
-    for node in input_graph.nodes:
-        nodes[node] = Union_Find()
-        nodes[node].set_up()
-    # When our MST in progress will have |V|-1 edges, it will be complete (see above, Q. 11)
-    e = 0
-    while e < len(input_graph.nodes)-1 and p < len(input_graph.graph):
-        # we consider the edge with the smallest power each time
-        n1, n2, power = input_graph.graph[p]
-        p = p+1
-        # if adding the edge doesn't create a cycle, we add it to our MST in progress
-        if nodes[n1].find() != nodes[n2].find():
-            MST.add_edge(n1, n2, power)
-            e = e+1
-            # and we take into account that the nodes are now connected
-            nodes[n1].union(nodes[n2])
-    return MST
+   """
+   Gives the minimum spanning tree (MST) of an input graph using Kruskal's algorithm
+   We use the union-find method to detect cycles as suggested in S. Dasgupta et al. (2006)
+   Path compression allows to bring complexity down to O(|V|):
+   See below time-complexity comparisons with BFS/DFS
+   (This algorithm works adequately on one graph at a time)
+   """
+   MST = Graph()
+   # Sorting edges in a nondecreasing order of their power:
+   # the spanning tree produced by iteration will then necessarily be a MST
+   input_graph.graph = sorted(input_graph.list_of_edges, key=lambda item: item[2])
+   # we use an index (p) to go through these edges in an increasing order of power
+   p = 0
+   nodes = {}
+   for node in input_graph.nodes:
+       nodes[node] = Union_Find()
+       nodes[node].set_up()
+   # When our MST in progress will have |V|-1 edges, it will be complete (see above, Q. 11)
+   e = 0
+   while e < len(input_graph.nodes)-1 and p < len(input_graph.graph):
+       # we consider the edge with the smallest power each time
+       n1, n2, power = input_graph.graph[p]
+       MST.max_power = max(power, MST.max_power)
+       p = p+1
+       # if adding the edge doesn't create a cycle, we add it to our MST in progress
+       if nodes[n1].find() != nodes[n2].find():
+           MST.add_edge(n1, n2, power)
+           e = e+1
+           # and we take into account that the nodes are now connected
+           nodes[n1].union(nodes[n2])
+   return MST
+
 
 
 def min_power_kruskal(input_graph, src, dest):
