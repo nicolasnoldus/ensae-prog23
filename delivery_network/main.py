@@ -6,6 +6,30 @@ import random
 # See below different rudimentary time estimation functions
 # They estimate only the actual min_power functions processing time (not e.g. of writing routes.out, etc.)
 
+def time_perf_min_power(file) :
+   import time
+   start=time.time()
+  
+   road=open(f"input/routes.{file}.in", "r")
+   g = graph_from_file(f"input/network.{file}.in")
+   gk = kruskal(g)
+   new=open(f"input/route.{file}.out", "w")
+   line_1=road.readline().split(' ')
+   nb_routes=int(line_1[0])
+   new.write(f"le nombre total de trajets est :, {nb_routes} \n")
+   for line in road :
+       list_line=line.split(" ")
+       src=int(list_line[0])
+       dest=int(list_line[1])
+       new.write(f'{gk.min_power(src, dest)[1]} \n')
+   road.close()
+   new.close()
+   end=time.time()
+  
+   duree = end - start
+   print(duree)
+    
+    
 def performance_estimation_min_power(file, routes):
     g = graph_from_file(file)
     individual_performances = []
