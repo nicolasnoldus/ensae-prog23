@@ -72,27 +72,24 @@ class Graph:
     
 
     def get_path_with_power(self, src, dest, power):
-        ancetres = self.bfs(src, dest, power) #ancetres est encore le dicitonnaire qui a comme clé un noeud et comme valeur 
-        #celui par lequel on a pu parvenir à ce noeud.
-        parcours = []
-        #on crée une liste parcours qui nous donnera le parcours entre les deux noeuds choisis en respectant toujours la puissance 
-        #exigée.
-        a = dest #on renomme dest en a pour faciliter la suite.
-        if a not in ancetres:
-            return None
-            #s'il n'y a pas de graphe connexe avec la puissance exigée, on retourne none.
-        while a != src:
-            #On met cette condition car on part de l'arrivée de notre bfs, donc on remonte point par point jusqu'à arriver à 
-            #notre point de départ.
-            parcours.append(a)
-            a = ancetres[a]
-            #on rajoute le sommet a à notre liste de noeuds parcourus et on définit "le nouveau" a comme étant son ancêtre pour
-            #rebrousser chemin.
-        parcours.append(src)
-        #on doit ajouter l'origine a la main parce que notre boucle while s'arrête dès lors que a prend la valeur du noeud de départ
-        #et ne le rajoute donc pas dans la liste.
-        parcours.reverse()
-        return parcours
+       ancetres = self.bfs(src, dest, power) 
+       parcours = []
+       a = dest 
+       if a not in ancetres:
+           return None
+           #s'il n'y a pas de graphe connexe avec la puissance exigée, on retourne none.
+       while a != src:
+           #On met cette condition car on part de l'arrivée de notre bfs, donc on remonte point par point jusqu'à arriver à
+           #notre point de départ.
+           parcours.append(a)
+           a = ancetres[a]
+           #on rajoute le sommet a à notre liste de noeuds parcourus et on définit "le nouveau" a comme étant son ancêtre pour
+           #rebrousser chemin.
+       parcours.append(src)
+       #on doit ajouter l'origine a la main parce que notre boucle while s'arrête dès lors que a prend la valeur du noeud de départ
+       #et ne le rajoute donc pas dans la liste.
+       parcours.reverse()
+       return parcours
 
 
     def dfs(self, node, visites, composantes, power=1000000000):  
@@ -133,52 +130,56 @@ class Graph:
         return set(map(frozenset, self.connected_components()))
 
 
-    def bfs(self, beg, dest, power=-1):
-        ancetres = {}
-        #le dictionnaire ancetres est le dicitonnaire qui permet d'avoir le lien entre chaque sommet, c'est-à-dire que la clé est le 
-        #sommet en question et sa valeur est le noeud par lequel on est arrivés. 
-        queue = []
-        visited = set()
-        #on fait un set pour les noeuds visités pour éviter d'avoir des boucles étant donné que le set ne gardera
-        #qu'une fois chaque noeud. 
-        queue.append(beg)
-        while len(queue) > 0:
-            n = queue.pop()
-            #le while est conditionné par la longueur de la queue du fait de l'utilisation de pop. Comme on a une queue on supprime le 
-            #dernier élément de cette liste pour chercher les autres sommets. 
-            for v in self.graph[n]:
-                if v[0] not in visited and power >= v[1]:
-                    #on garde la condition dans les visites pour ne pas faire de boucle et on rajoute celle sur la puissance pour coller
-                    #aux conditions de base. De la sorte, on considère qu'il n'y a pas d'arêtes si la puissance de celle-ci
-                    #est supérieure à la puissance donnée comme paramètre. 
-                    queue.append(v[0])
-                    #on rajoute tous les voisins du noeud en question à la liste de queue pour avoir tous les chemins
-                    ancetres[v[0]] = n
-                    #on définit la valeur comme le noeur à partir duquel on est arrivés.
-                    visited.add(v[0])
-                    #et on le rajoute au set des visites comme pour éviter les boucles.
-        return ancetres
-
+    def bfs(self, beg, dest, power=float('inf')):
+       ancetres = dict()
+       #le dictionnaire ancetres est le dictonnaire qui permet d'avoir le lien entre chaque sommet, c'est-à-dire que la clé est le
+       #sommet en question et sa valeur est le noeud par lequel on est arrivés.
+       queue = []
+       visited = set()
+       #on fait un set pour les noeuds visités pour éviter d'avoir des boucles étant donné que le set ne gardera
+       #qu'une fois chaque noeud.
+       queue.append(beg)
+       while len(queue) > 0:
+           n = queue.pop()
+           #le while est conditionné par la longueur de la queue du fait de l'utilisation de pop. Comme on a une queue on supprime le
+           #dernier élément de cette liste pour chercher les autres sommets.
+          
+           for v in self.graph[n]:
+               #print(v)
+               if (type(v)==tuple) is True :
+                   if v[0] not in visited and power >= v[1]:
+                   #on garde la condition dans les visites pour ne pas faire de boucle et on rajoute celle sur la puissance pour coller
+                   #aux conditions de base. De la sorte, on considère qu'il n'y a pas d'arêtes si la puissance de celle-ci
+                   #est supérieure à la puissance donnée comme paramètre.
+                       queue.append(v[0])
+                   #on rajoute tous les voisins du noeud en question à la liste de queue pour avoir tous les chemins
+                       ancetres[v[0]] = n
+                   #on définit la valeur comme le noeur à partir duquel on est arrivés.
+                       visited.add(v[0])
+                   #et on le rajoute au set des visites comme pour éviter les boucles.
+               else :
+                   pass   
+      
+       return ancetres
 
     def min_power(self, src, dest):
-        path=[]
-        start = 0
-        end = self.max_power
-        if dest not in self.dfs(src):
-            return None
-        while start != end:
-            mid = (start+end)//2
-            if dest not in self.dfs(src, power=mid):
-                start = mid
+        debut = 1
+        fin = self.max_power
+        actu = self.get_path_with_power(src, dest, self.max_power)
+        if actu is None or dest not in actu:
+            return None, None
+
+        while debut != fin:
+            mid = ((debut+fin)//2)
+            actu = self.get_path_with_power(src, dest, power=mid)
+            if actu is not None and dest in actu:
+                fin = mid
             else:
-                end = mid
-            if end-start == 1:
-                start=end
-        #We now have identified the minimum power to link the two nodes, stored in power
-        #We have to get the path
-        power = end
-        path = self.get_list_of_paths_with_power(origin,destination,power=power)[0]
-        return (power,path)
+                debut = mid
+            if fin-debut == 1:
+                break
+        minus = fin
+        return self.get_path_with_power(src, dest, minus), minus
 
 
 def graph_from_file(filename):
