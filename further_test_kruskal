@@ -1,0 +1,13 @@
+def test_kruskal ():
+        """
+        On crée un graphe G avec une boucle grâce à addd_edge
+        On le teste avec Kruskal qui doit rendre le même graphe sans la dernière arête. On le nomme K
+        """
+        G=Graph([k for k in range (1,4)]) 
+        K=Graph([k for k in range (1,4)])
+        for k in range(1,4) :
+            G.add_edge(k, k+1, k)
+            test.add_edge(k,k+1,k)
+        G.add_edge(4, 1, 4)
+
+        return (G.kruskal().graph==K.graph)
