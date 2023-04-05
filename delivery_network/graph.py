@@ -394,7 +394,8 @@ def LCA(src, dest, ancetres) :
        #sur network 10, en 7 secondes entre les noeuds : 9 et 14778.
        #en comptant le temps de la mise en place du kruskal
        #en 8 secondes entre 1 et 10000
-        
+
+
 
 def min_power_LCA(g, src, dest):
     """
